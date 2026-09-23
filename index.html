@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Hamiltonian World Model: physically structured latent transitions for embodied world models.">
+  <meta name="keywords" content="Hamiltonian World Model, World Model, Embodied AI, Ctrl-World, EVAC, Cosmos, RoboCasa, LIBERO">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hamiltonian World Model</title>
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Noto Sans', sans-serif;
+      background-color: #fcfcfc;
+      color: #2b2b2b;
+    }
+    .title-color {
+      background: linear-gradient(45deg, #0f766e, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+    .subtitle-small {
+      font-size: 1.35rem !important;
+      margin-top: 10px !important;
+      font-weight: 400;
+      color: #4a4a4a;
+    }
+    .publication-links {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .button-gap { margin: 5px; }
+    .section { padding: 2.6rem 1.5rem; }
+    .container.is-max-desktop { max-width: 980px; }
+    .container.is-wide { max-width: 1120px; }
+    .container.is-xwide { max-width: 1680px; }
+    .anchor-row {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      font-size: 0.95rem;
+    }
+    .anchor-row a { color: #3d4f66; }
+    .gray-box-container {
+      background-color: #f5f5f5;
+      border-radius: 15px;
+      padding: 24px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .figure-frame {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #e6e6e6;
+      background: #fff;
+    }
+    .figure-method {
+      width: 78%;
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+    .caption {
+      color: #555;
+      margin-top: 8px;
+      line-height: 1.55;
+    }
+    .citation-box {
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 10px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    table.results td, table.results th { text-align: center; vertical-align: middle; }
+    table.results td:first-child, table.results th:first-child { text-align: left; }
+    .table.is-striped tbody tr.ours {
+      background-color: #e7f1ff !important;
+      font-weight: 600;
+    }
+    .delta-pos { color: #0f766e; font-weight: 700; }
+    .delta-neg { color: #b45309; }
+    .top-bg-wrapper {
+      position: relative;
+      background-color: #eef3f8;
+      padding-bottom: 1.5rem;
+    }
+    .bg-layer {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .bg-grid-3d {
+      position: absolute;
+      top: 10%;
+      left: -50%;
+      width: 200%;
+      height: 150%;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.92) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.92) 2px, transparent 2px);
+      background-size: 80px 80px;
+      transform: perspective(1000px) rotateX(72deg);
+      transform-origin: top center;
+    }
+    .wireframe-obj { position: absolute; opacity: 0.85; }
+    .wireframe-obj svg { animation: float-up-down 6s ease-in-out infinite; }
+    @keyframes float-up-down {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    .obj-left { top: 22%; left: 7%; }
+    .obj-right { top: 26%; right: 8%; }
+    .obj-right svg { animation-delay: -3s; }
+    .bg-fade {
+      position: absolute;
+      bottom: 0; left: 0; width: 100%; height: 280px;
+      background: linear-gradient(to bottom, rgba(252,252,252,0) 0%, #fcfcfc 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .content-layer { position: relative; z-index: 2; }
+    .pair-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .pair-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-bottom: 8px;
+    }
+    .badge.fail { background: #fff1f0; color: #b42318; border: 1px solid #f3c3bd; }
+    .badge.ok { background: #ecfdf3; color: #067647; border: 1px solid #abefc6; }
+    .badge.neutral { background: #f4f4f5; color: #3f3f46; border: 1px solid #e4e4e7; }
+    video.clip {
+      width: 100%;
+      border-radius: 8px;
+      background: #111;
+      border: 1px solid #ddd;
+      display: block;
+    }
+    .legend-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.85fr;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .phys-labels {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.9fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .phys-bench video.clip {
+      width: 100%;
+      height: 230px;
+      object-fit: contain;
+      background: #111;
+    }
+    .phys-bench .thumb { width: 100%; }
+    .phys-bench .thumb-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .phys-bench .thumb img {
+      height: 96px;
+      object-fit: contain;
+      background: #111;
+    }
+    .phys-bench .thumb .cap { min-height: 34px; }
+    .phys-bench .badge { font-size: 0.72rem; }
+    .thumb-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .thumb {
+      width: 148px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      opacity: 0.72;
+      transition: all 0.15s ease;
+    }
+    .thumb img { width: 100%; height: 78px; object-fit: cover; display: block; background: #111; }
+    .thumb .cap {
+      font-size: 0.72rem;
+      line-height: 1.25;
+      padding: 5px 6px 6px;
+      text-align: center;
+      color: #444;
+      min-height: 46px;
+    }
+    .thumb:hover { opacity: 1; transform: translateY(-1px); }
+    .thumb.active {
+      opacity: 1;
+      border-color: #2563eb;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+    }
+    .paper-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #e8f0fe;
+      border-radius: 999px;
+      padding: 0 6px;
+      margin-left: 4px;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .arrow-btn {
+      background: none;
+      border: none;
+      font-size: 1.7rem;
+      color: #b5b5b5;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .arrow-btn:hover { color: #2563eb; }
+    .clip-meta {
+      text-align: center;
+      color: #555;
+      font-size: 0.92rem;
+      margin: 4px 0 12px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+    .bench-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+      align-items: stretch;
+    }
+    .bench-card h3 {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .bench-split .stack-clip + .stack-clip { margin-top: 12px; }
+    .bench-split video.clip {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 1;
+      object-fit: contain;
+      background: #111;
+    }
+    .bench-split .thumb-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bench-split .thumb { width: 100%; }
+    .bench-split .phys-bench video.clip {
+      width: 100%;
+      height: auto;
+      aspect-ratio: auto;
+      object-fit: contain;
+    }
+    .phys-bench.gray-box-container { padding: 16px 14px 18px; }
+    .phys-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      width: min(1080px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .phys-stack video.clip {
+      width: 100%;
+      height: auto;
+      max-height: none;
+      object-fit: contain;
+      background: #111;
+    }
+    .phys-stack .thumb-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .phys-stack .thumb { width: 240px; }
+    .phys-stack .thumb img {
+      height: 120px;
+      object-fit: contain;
+      background: #111;
+    }
+    .bench-split .thumb img { height: 72px; }
+    .bench-split .thumb .cap { min-height: 38px; }
+    @media (max-width: 860px) {
+      .pair-head, .pair-grid, .legend-row, .two-col, .bench-split { grid-template-columns: 1fr; }
+      .thumb { width: 46%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bg-wrapper">
+  <div class="bg-layer">
+    <div class="bg-grid-3d"></div>
+    <div class="wireframe-obj obj-left">
+      <svg width="150" height="90" viewBox="0 0 150 90" fill="none">
+        <ellipse cx="70" cy="46" rx="48" ry="22" stroke="rgba(255,255,255,0.55)" stroke-width="1.6"/>
+        <ellipse cx="70" cy="46" rx="22" ry="48" stroke="rgba(255,255,255,0.28)" stroke-width="1.4"/>
+        <path d="M22 46 C40 18, 100 18, 118 46" stroke="rgba(15,118,110,0.0)" />
+        <circle cx="112" cy="40" r="3.2" fill="rgba(255,255,255,0.8)"/>
+      </svg>
+    </div>
+    <div class="wireframe-obj obj-right">
+      <svg width="160" height="90" viewBox="0 0 160 90" fill="none">
+        <path d="M8 62 H46 L62 28 H92 L108 62 H150" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" fill="none"/>
+        <circle cx="62" cy="28" r="3" fill="rgba(255,255,255,0.7)"/>
+        <circle cx="92" cy="28" r="3" fill="rgba(255,255,255,0.45)"/>
+      </svg>
+    </div>
+  </div>
+  <div class="bg-fade"></div>
+
+  <div class="content-layer">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container is-max-desktop" style="margin-top: 28px;">
+          <div class="has-text-centered">
+            <h1 class="title is-2 publication-title">
+              <span class="title-color">Hamiltonian World Model</span>
+            </h1>
+            <h2 class="subtitle is-3 subtitle-small">
+              Physically Structured Latent Transitions for Embodied Prediction
+            </h2>
+
+            <div class="is-size-5" style="margin-top: 16px;">
+              Anonymous authors
+            </div>
+            <div class="is-size-6" style="margin-top: 8px; color: #555;">
+              Under double-blind review
+            </div>
+
+            <div class="publication-links" style="margin-top: 22px;">
+              <a href="assets/paper/Hamiltonian_World_Model.pdf" class="button is-normal is-rounded is-dark button-gap">
+                <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                <span>Paper</span>
+              </a>
+              <a class="button is-normal is-rounded is-dark button-gap" style="opacity: 0.6; cursor: default;">
+                <span class="icon"><i class="fab fa-github"></i></span>
+                <span>Code (Coming Soon)</span>
+              </a>
+            </div>
+            <div class="anchor-row">
+              <a href="#method">Method</a>
+              <a href="#results">Results</a>
+              <a href="#physics">Physical quantities</a>
+              <a href="#rollouts">Task rollouts</a>
+              <a href="#citation">Citation</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="abstract">
+      <div class="container is-max-desktop">
+        <h2 class="title is-3 has-text-centered">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Embodied world models are increasingly expected to serve not only as video generators, but as internal simulators for action-conditioned prediction. Most existing models parameterize latent transitions with generic generative modules, so physical structure is learned only implicitly. Small one-step errors then accumulate into long-horizon drift, especially in contact-rich manipulation.
+          </p>
+          <p>
+            We propose <strong>Hamiltonian World Model (HWM)</strong>, a physically structured latent transition. Backbone latents are mapped into a learned phase space of generalized coordinates and momenta, then evolved by dissipative Hamiltonian dynamics. A bidirectional phase-space interface and a multi-step transition-consistency objective keep this rollout compatible with existing encoders and decoders, so HWM is a drop-in replacement for the latent transition module.
+          </p>
+          <p>
+            In simulation, HWM improves speed, acceleration, and jerk prediction and preserves system energy more faithfully than an unstructured transition. Instantiated in Ctrl-World, EVAC, and Cosmos-Predict2.5-2B, it yields a 2.7% relative success-rate gain on RoboCasa, a 9.7% relative gain on Ctrl-World nDTW, and an 8.4% relative gain on EVAC Logic.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="section" id="method">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Ordinary Transition vs. Hamiltonian Transition</h2>
+    <div class="content has-text-centered">
+      <img class="figure-frame" src="assets/figures/intro.png" alt="Ordinary world model compared with Hamiltonian World Model">
+      <p class="is-size-7 caption">
+        Comparison between an ordinary generative world model and Hamiltonian World Model, matching the paper overview. <strong>Left:</strong> a generic transition can look plausible over a short horizon while speed change and energy transfer remain unconstrained, so long-horizon contact becomes physically implausible. <strong>Right:</strong> the same observation and action are evolved in phase space, and the predicted future stays physically consistent.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Model Architecture</h2>
+    <div class="content has-text-centered">
+      <img class="figure-frame figure-method" src="assets/figures/method.png" alt="Hamiltonian latent dynamics architecture">
+      <p class="is-size-7 caption">
+        Given an observation \(o_t\), the encoder \(E_\phi\) maps it to a latent \(z_t\). HWM lifts \(z_t\) into generalized coordinates and momenta \((q_t, p_t)\) and rolls them forward with a learned Hamiltonian
+        \(H_\theta(q,p)=\tfrac{1}{2}p^\top M_\theta^{-1}(q)\,p+V_\theta(q)\)
+        and a semi-implicit symplectic Euler step. Predicted phase states are mapped back to backbone latents and decoded to future observations. Training combines world-model reconstruction, phase-space reconstruction, and multi-step transition consistency.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="results">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Experimental Results</h2>
+
+    <div class="content" style="margin-top: 28px; overflow-x: auto;">
+      <h3 class="title is-5 has-text-centered">Table 1: Motion prediction in simulation</h3>
+      <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.88rem;">
+        <thead>
+          <tr>
+            <th style="background:#f0f4f9;">Method</th>
+            <th style="background:#f0f4f9;">Step</th>
+            <th style="background:#f0f4f9;">Pos. RMSE &darr;</th>
+            <th style="background:#f0f4f9;">Speed RMSE &darr;</th>
+            <th style="background:#f0f4f9;">Acc. RMSE &darr;</th>
+            <th style="background:#f0f4f9;">Jerk RMSE &darr;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Vanilla</td><td>30</td><td>6.217</td><td>3.455</td><td>10.966</td><td>14.135</td></tr>
+          <tr class="ours"><td>Ours</td><td>30</td><td>6.212</td><td>3.372</td><td>9.235</td><td>11.401</td></tr>
+          <tr><td>Vanilla</td><td>60</td><td>5.590</td><td>2.545</td><td>8.332</td><td>12.329</td></tr>
+          <tr class="ours"><td>Ours</td><td>60</td><td>5.524</td><td>2.525</td><td>7.483</td><td>10.750</td></tr>
+        </tbody>
+      </table>
+      <p class="is-size-7 caption">Lower is better. Object centers are read from generated frames; speed, acceleration, and jerk are finite differences against simulator annotations. The Hamiltonian transition reduces higher-order motion error at both horizons.</p>
+    </div>
+
+    <div class="two-col" style="margin-top: 36px;">
+      <div style="overflow-x: auto;">
+        <h3 class="title is-5 has-text-centered">Table 2: Ctrl-World</h3>
+        <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.82rem;">
+          <thead>
+            <tr>
+              <th style="background:#f0f4f9;">Method</th>
+              <th style="background:#f0f4f9;">nDTW</th>
+              <th style="background:#f0f4f9;">PSNR</th>
+              <th style="background:#f0f4f9;">BLEU</th>
+              <th style="background:#f0f4f9;">Scene</th>
+              <th style="background:#f0f4f9;">CLIP</th>
+              <th style="background:#f0f4f9;">Logic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Vanilla</td><td>0.670</td><td>10.13</td><td>0.767</td><td>90.88</td><td>78.31</td><td>93.3</td></tr>
+            <tr class="ours"><td>Ours</td><td>0.735</td><td>10.16</td><td>0.802</td><td>90.96</td><td>78.96</td><td>96.7</td></tr>
+          </tbody>
+        </table>
+        <p class="is-size-7 caption">Single-arm multi-view manipulation on AgiBot World, evaluated with EWMBench. All metrics are higher-is-better. nDTW improves by 9.7% relative.</p>
+      </div>
+      <div style="overflow-x: auto;">
+        <h3 class="title is-5 has-text-centered">Table 3: EVAC</h3>
+        <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.82rem;">
+          <thead>
+            <tr>
+              <th style="background:#f0f4f9;">Method</th>
+              <th style="background:#f0f4f9;">nDTW</th>
+              <th style="background:#f0f4f9;">PSNR</th>
+              <th style="background:#f0f4f9;">BLEU</th>
+              <th style="background:#f0f4f9;">Scene</th>
+              <th style="background:#f0f4f9;">CLIP</th>
+              <th style="background:#f0f4f9;">Logic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Vanilla</td><td>0.282</td><td>16.61</td><td>0.104</td><td>91.3</td><td>77.5</td><td>80.0</td></tr>
+            <tr class="ours"><td>Ours</td><td>0.283</td><td>16.64</td><td>0.111</td><td>92.2</td><td>78.4</td><td>86.7</td></tr>
+          </tbody>
+        </table>
+        <p class="is-size-7 caption">Dual-arm single-view manipulation. Logic rises from 80.0 to 86.7, an 8.4% relative gain. Percent metrics are reported on the paper's 0–100 scale.</p>
+      </div>
+    </div>
+
+    <div class="content" style="margin-top: 36px; overflow-x: auto;">
+      <h3 class="title is-5 has-text-centered">Table 4: Downstream success with Cosmos-Predict2.5-2B</h3>
+      <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.88rem;">
+        <thead>
+          <tr>
+            <th rowspan="2" style="background:#f0f4f9;">Method</th>
+            <th colspan="5" style="background:#f0f4f9;">LIBERO (%)</th>
+            <th style="background:#f0f4f9;">RoboCasa (%)</th>
+          </tr>
+          <tr>
+            <th>Spatial</th><th>Object</th><th>Goal</th><th>Long</th><th>Avg</th><th>Avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Vanilla</td><td>97.6</td><td>99.8</td><td>96.2</td><td>97.6</td><td>97.8</td><td>66.7</td></tr>
+          <tr class="ours"><td>Ours</td><td>98.6</td><td>99.8</td><td>98.0</td><td>98.2</td><td>98.7</td><td>68.5</td></tr>
+        </tbody>
+      </table>
+      <p class="is-size-7 caption">The observation interface, tokenizer, and renderer stay fixed. Only the latent transition is replaced. RoboCasa average success moves from 66.7% to 68.5%, a 2.7% relative gain.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="physics">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Physical Quantities Stay Aligned</h2>
+    <p class="has-text-centered" style="color:#555; max-width: 820px; margin: 0 auto 18px;">
+      The paper plots compare an ordinary transition with HWM on velocity and energy. Below, Ctrl-World is on top and EVAC is underneath. Inside each clip the ordinary finetune is on the left and the Hamiltonian rollout is in the center.
+    </p>
+
+    <div class="two-col">
+      <div>
+        <h3 class="title is-5 has-text-centered">Predicted velocity</h3>
+        <img class="figure-frame" src="assets/figures/speed.png" alt="Velocity curves">
+        <p class="is-size-7 caption">Qualitative velocity curves from the paper. Dashed gray is ground truth, red is the transition without Hamiltonian structure, and teal is HWM. Without the Hamiltonian, speed spikes or drifts; HWM stays closer to the true curve on uniform, accelerated, and rebound motion.</p>
+      </div>
+      <div>
+        <h3 class="title is-5 has-text-centered">Energy conservation</h3>
+        <img class="figure-frame" src="assets/figures/hami.png" alt="Hamiltonian energy curves">
+        <p class="is-size-7 caption">System energy and relative Hamiltonian drift. Ordinary finetuning lets the energy wander away from the ground-truth level. HWM keeps a smaller drift, which is the same physical-consistency claim tested in the videos below.</p>
+      </div>
+    </div>
+
+    </div>
+    <div class="container is-xwide">
+    <h3 class="title is-4 has-text-centered" style="margin-top: 36px;">Ctrl-World and EVAC rollouts</h3>
+    <p class="has-text-centered caption" style="margin-bottom: 16px;">
+      Ctrl-World is on top and EVAC is below. Inside every clip, <strong>left</strong> is ordinary finetuning and <strong>center</strong> is the Hamiltonian transition. The <strong>right</strong> panel is only \(|\mathrm{Hami}-\mathrm{Vanilla}|\): bright pixels mark where the two disagree. That panel is not another result, so its upper and lower rows are not “better” or “worse.” On EVAC, the stick figure under the camera view is that method’s arm joints.
+    </p>
+    <div class="phys-stack">
+      <div class="gray-box-container bench-card phys-bench" id="ctrl-bench">
+        <h3 class="title is-4">Ctrl-World</h3>
+        <div class="phys-labels">
+          <span class="badge fail">Left · Vanilla</span>
+          <span class="badge ok">Center · Hamiltonian</span>
+          <span class="badge neutral">Right · difference</span>
+        </div>
+        <p class="clip-meta" data-meta></p>
+        <video class="clip" data-video controls playsinline muted loop preload="metadata"></video>
+        <div class="has-text-centered">
+          <button class="arrow-btn" data-nav="prev" aria-label="Previous Ctrl-World clip"><i class="fas fa-chevron-left"></i></button>
+          <button class="arrow-btn" data-nav="next" aria-label="Next Ctrl-World clip"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="thumb-row" data-menu></div>
+      </div>
+      <div class="gray-box-container bench-card phys-bench" id="evac-bench">
+        <h3 class="title is-4">EVAC</h3>
+        <div class="phys-labels">
+          <span class="badge fail">Left · Vanilla</span>
+          <span class="badge ok">Center · Hamiltonian</span>
+          <span class="badge neutral">Right · difference</span>
+        </div>
+        <p class="clip-meta" data-meta></p>
+        <video class="clip" data-video controls playsinline muted loop preload="metadata"></video>
+        <div class="has-text-centered">
+          <button class="arrow-btn" data-nav="prev" aria-label="Previous EVAC clip"><i class="fas fa-chevron-left"></i></button>
+          <button class="arrow-btn" data-nav="next" aria-label="Next EVAC clip"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="thumb-row" data-menu></div>
+      </div>
+    </div>
+    </div>
+</section>
+
+<section class="section" id="rollouts">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Task Execution: SFT Fails, Hamiltonian Succeeds</h2>
+    <p class="has-text-centered caption" style="max-width: 860px; margin: 0 auto 16px;">
+      RoboCasa is on the left and LIBERO is on the right, in matching panels. Inside each panel the vanilla failure is on top and the Hamiltonian success is below. Clips marked <span class="paper-tag">Paper</span> match the figure above. RoboCasa pairs share the same episode.
+    </p>
+    <div class="content has-text-centered">
+      <img class="figure-frame" src="assets/figures/example.png" alt="Paper examples of success and failure">
+      <p class="is-size-7 caption">Paper figure. Top block: RoboCasa PnPCounterToStove. Bottom block: LIBERO, put both moka pots on the stove. Success rows are HWM; failure rows are the vanilla transition.</p>
+    </div>
+
+    <div class="bench-split">
+      <div class="gray-box-container bench-card" id="robo-bench">
+        <h3 class="title is-4">RoboCasa</h3>
+        <div class="slider-row">
+          <button class="arrow-btn" data-nav="prev" aria-label="Previous RoboCasa task"><i class="fas fa-chevron-left"></i></button>
+          <div style="flex:1; min-width:0;">
+            <p class="clip-meta" data-meta></p>
+            <div class="stack-clip">
+              <span class="badge fail">Vanilla SFT · failure</span>
+              <video class="clip" data-side="vanilla" controls playsinline muted preload="metadata"></video>
+            </div>
+            <div class="stack-clip">
+              <span class="badge ok">Hamiltonian · success</span>
+              <video class="clip" data-side="hami" controls playsinline muted preload="metadata"></video>
+            </div>
+            <div class="has-text-centered" style="margin-top: 12px;">
+              <button class="button is-small is-rounded is-link is-light" data-replay>
+                <span class="icon"><i class="fas fa-play"></i></span>
+                <span>Play both from the start</span>
+              </button>
+            </div>
+          </div>
+          <button class="arrow-btn" data-nav="next" aria-label="Next RoboCasa task"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="thumb-row" data-menu></div>
+      </div>
+
+      <div class="gray-box-container bench-card" id="libero-bench">
+        <h3 class="title is-4">LIBERO</h3>
+        <div class="slider-row">
+          <button class="arrow-btn" data-nav="prev" aria-label="Previous LIBERO task"><i class="fas fa-chevron-left"></i></button>
+          <div style="flex:1; min-width:0;">
+            <p class="clip-meta" data-meta></p>
+            <div class="stack-clip">
+              <span class="badge fail">Vanilla SFT · failure</span>
+              <video class="clip" data-side="vanilla" controls playsinline muted preload="metadata"></video>
+            </div>
+            <div class="stack-clip">
+              <span class="badge ok">Hamiltonian · success</span>
+              <video class="clip" data-side="hami" controls playsinline muted preload="metadata"></video>
+            </div>
+            <div class="has-text-centered" style="margin-top: 12px;">
+              <button class="button is-small is-rounded is-link is-light" data-replay>
+                <span class="icon"><i class="fas fa-play"></i></span>
+                <span>Play both from the start</span>
+              </button>
+            </div>
+          </div>
+          <button class="arrow-btn" data-nav="next" aria-label="Next LIBERO task"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="thumb-row" data-menu></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">RoboCasa Task Breakdown</h2>
+    <div class="content" style="overflow-x: auto;">
+      <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.78rem;">
+        <thead>
+          <tr>
+            <th style="background:#f0f4f9;">Task</th>
+            <th style="background:#f0f4f9;">V195</th>
+            <th style="background:#f0f4f9;">V196</th>
+            <th style="background:#f0f4f9;">V197</th>
+            <th style="background:#f0f4f9;">V avg</th>
+            <th style="background:#f0f4f9;">H195</th>
+            <th style="background:#f0f4f9;">H196</th>
+            <th style="background:#f0f4f9;">H197</th>
+            <th style="background:#f0f4f9;">H avg</th>
+            <th style="background:#f0f4f9;">&Delta;</th>
+          </tr>
+        </thead>
+        <tbody id="task-table"></tbody>
+      </table>
+      <p class="is-size-7 caption">Task-level success on Cosmos with RoboCasa, three seeds. V is vanilla and H is HWM. The reported average is the unweighted mean of 24 tasks; individual tasks can move in either direction.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Conclusion</h2>
+    <div class="content has-text-justified">
+      <p>
+        HWM places physical structure in the latent transition itself. Phase variables evolve under controlled dissipative Hamiltonian dynamics, with a symplectic rollout and a residual path back to the backbone latent space. Across simulation, Ctrl-World, EVAC, and Cosmos, this changes predicted motion, energy drift, visual-temporal metrics, and downstream task success without replacing the renderer or the tokenizer.
+      </p>
+      <p>
+        The experiments do not involve human subjects or deployment on physical robots. A more physically consistent world model can make model-based evaluation more faithful, and it still needs the same care as any component used for autonomous control.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="citation">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Citation</h2>
+    <div class="content">
+      <p>If you use this work or find it helpful, please consider citing:</p>
+      <div class="citation-box">@inproceedings{anonymous2027hamiltonian,
+  title     = {Hamiltonian World Model},
+  author    = {Anonymous},
+  booktitle = {Submitted to the International Conference on Learning Representations},
+  year      = {2027}
+}</div>
+    </div>
+  </div>
+</section>
+
+<script>
+const ROBOCASA_TASKS = [
+  { title: "PnPCounterToStove", meta: "Same episode 6 · paper figure", paper: true, stem: "robocasa_pnp_counter_to_stove" },
+  { title: "CoffeeServeMug", meta: "Same episode 11", paper: false, stem: "robocasa_coffee_serve_mug" },
+  { title: "PnPCabToCounter", meta: "Same episode 17", paper: false, stem: "robocasa_pnp_cab_to_counter" },
+  { title: "PnPSinkToCounter", meta: "Same episode 3", paper: false, stem: "robocasa_pnp_sink_to_counter" }
+];
+
+const LIBERO_TASKS = [
+  { title: "Put both moka pots on the stove", meta: "Paper figure", paper: true, stem: "libero_moka_pots" },
+  { title: "Alphabet soup and tomato sauce", meta: "Put both into the basket", paper: false, stem: "libero_alphabet_soup" },
+  { title: "Black bowl, bottom drawer", meta: "Put the black bowl in the bottom drawer", paper: false, stem: "libero_black_bowl" },
+  { title: "White mug on the plate", meta: "Put the white mug on the plate", paper: false, stem: "libero_white_mug" }
+];
+
+const CTRL_CLIPS = [
+  { title: "Scene 367", meta: "Scene 367 · episode 650191 · trial 2", stem: "ctrlworld_scene367" },
+  { title: "Scene 543", meta: "Scene 543 · episode 798749 · trial 2", stem: "ctrlworld_scene543" },
+  { title: "Scene 574", meta: "Scene 574 · episode 834014 · trial 1", stem: "ctrlworld_scene574" }
+];
+
+const EVAC_CLIPS = [
+  { title: "Scene 367", meta: "Scene 367 · episode 650191 · trial 2", stem: "evac_scene367" },
+  { title: "Scene 543 · trial 1", meta: "Scene 543 · episode 798749 · trial 1", stem: "evac_scene543_trial1" },
+  { title: "Scene 543 · trial 2", meta: "Scene 543 · episode 798749 · trial 2", stem: "evac_scene543_trial2" }
+];
+
+const ROBOCASA_ROWS = [
+  ["CloseDoubleDoor", 88, 84, 88, 86.7, 90, 86, 96, 90.7, 4.0],
+  ["CloseDrawer", 98, 98, 98, 98.0, 98, 100, 100, 99.3, 1.3],
+  ["CloseSingleDoor", 96, 96, 96, 96.0, 96, 92, 100, 96.0, 0],
+  ["CoffeePressButton", 98, 96, 98, 97.3, 96, 94, 100, 96.7, -0.7],
+  ["CoffeeServeMug", 58, 52, 48, 52.7, 56, 58, 62, 58.7, 6.0],
+  ["CoffeeSetupMug", 40, 20, 38, 32.7, 38, 28, 44, 36.7, 4.0],
+  ["OpenDoubleDoor", 84, 92, 90, 88.7, 80, 88, 86, 84.7, -4.0],
+  ["OpenDrawer", 92, 96, 76, 88.0, 94, 96, 100, 96.7, 8.7],
+  ["OpenSingleDoor", 80, 88, 90, 86.0, 82, 90, 88, 86.7, 0.7],
+  ["PnPCabToCounter", 28, 38, 30, 32.0, 30, 30, 36, 32.0, 0],
+  ["PnPCounterToCab", 62, 58, 50, 56.7, 60, 58, 66, 61.3, 4.7],
+  ["PnPCounterToMicrowave", 26, 40, 26, 30.7, 30, 36, 36, 34.0, 3.3],
+  ["PnPCounterToSink", 62, 50, 52, 54.7, 58, 48, 64, 56.7, 2.0],
+  ["PnPCounterToStove", 50, 74, 66, 63.3, 50, 68, 56, 58.0, -5.3],
+  ["PnPMicrowaveToCounter", 40, 34, 24, 32.7, 40, 46, 46, 44.0, 11.3],
+  ["PnPSinkToCounter", 74, 70, 70, 71.3, 70, 76, 76, 74.0, 2.7],
+  ["PnPStoveToCounter", 68, 72, 60, 66.7, 60, 66, 66, 64.0, -2.7],
+  ["TurnOffMicrowave", 100, 100, 100, 100, 100, 100, 100, 100, 0],
+  ["TurnOffSinkFaucet", 70, 76, 78, 74.7, 72, 78, 78, 76.0, 1.3],
+  ["TurnOffStove", 20, 24, 28, 24.0, 14, 20, 20, 18.0, -6.0],
+  ["TurnOnMicrowave", 76, 76, 84, 78.7, 76, 82, 82, 80.0, 1.3],
+  ["TurnOnSinkFaucet", 64, 60, 60, 61.3, 64, 70, 70, 68.0, 6.7],
+  ["TurnOnStove", 52, 54, 50, 52.0, 52, 58, 58, 56.0, 4.0],
+  ["TurnSinkSpout", 72, 80, 76, 76.0, 72, 78, 78, 76.0, 0]
+];
+
+function fmtDelta(v) {
+  if (v > 0) return '<span class="delta-pos">+' + v.toFixed(1) + '</span>';
+  if (v < 0) return '<span class="delta-neg">' + v.toFixed(1) + '</span>';
+  return '0';
+}
+
+const tableBody = document.getElementById("task-table");
+ROBOCASA_ROWS.forEach(row => {
+  const tr = document.createElement("tr");
+  const cells = row.slice(0, 9).map((value, i) => {
+    const text = (i === 0) ? value : value;
+    return "<td>" + text + "</td>";
+  }).join("");
+  tr.innerHTML = cells + "<td>" + fmtDelta(row[9]) + "</td>";
+  tableBody.appendChild(tr);
+});
+
+function buildMenu(items, menu, onPick) {
+  items.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "thumb" + (index === 0 ? " active" : "");
+    card.dataset.index = String(index);
+    const tag = item.paper ? '<span class="paper-tag">Paper</span>' : "";
+    const bench = item.bench ? '<strong>' + item.bench + '</strong><br>' : "";
+    card.innerHTML =
+      '<img alt="" src="assets/posters/' + item.stem + '.jpg">' +
+      '<div class="cap">' + bench + item.title + tag + '</div>';
+    card.addEventListener("click", () => onPick(index));
+    menu.appendChild(card);
+  });
+}
+
+function setActive(menu, index) {
+  menu.querySelectorAll(".thumb").forEach(node => {
+    node.classList.toggle("active", Number(node.dataset.index) === index);
+  });
+}
+
+function mountClip(rootId, items) {
+  const root = document.getElementById(rootId);
+  const menu = root.querySelector("[data-menu]");
+  const meta = root.querySelector("[data-meta]");
+  const video = root.querySelector("[data-video]");
+  let index = 0;
+  function show(next, autoplay) {
+    index = (next + items.length) % items.length;
+    const item = items[index];
+    meta.textContent = item.meta;
+    video.poster = "assets/posters/" + item.stem + ".jpg";
+    video.src = "assets/videos/physics/" + item.stem + ".mp4";
+    video.load();
+    setActive(menu, index);
+    if (autoplay) video.play().catch(() => {});
+  }
+  buildMenu(items, menu, i => show(i, true));
+  root.querySelector('[data-nav="prev"]').addEventListener("click", () => show(index - 1, true));
+  root.querySelector('[data-nav="next"]').addEventListener("click", () => show(index + 1, true));
+  show(0, false);
+}
+mountClip("ctrl-bench", CTRL_CLIPS);
+mountClip("evac-bench", EVAC_CLIPS);
+
+function mountBench(rootId, items) {
+  const root = document.getElementById(rootId);
+  const menu = root.querySelector("[data-menu]");
+  const meta = root.querySelector("[data-meta]");
+  const left = root.querySelector('[data-side="vanilla"]');
+  const right = root.querySelector('[data-side="hami"]');
+  let index = 0;
+  let pairLock = false;
+
+  function mirror(from, to) {
+    if (pairLock) return;
+    pairLock = true;
+    if (to.readyState >= 1 && Math.abs(from.currentTime - to.currentTime) > 0.2) {
+      const limit = Number.isFinite(to.duration) ? to.duration : from.currentTime;
+      to.currentTime = Math.min(from.currentTime, limit);
+    }
+    if (!from.paused && to.paused) to.play().catch(() => {});
+    if (from.paused && !to.paused) to.pause();
+    pairLock = false;
+  }
+  ["play", "pause", "seeked"].forEach(evt => {
+    left.addEventListener(evt, () => mirror(left, right));
+    right.addEventListener(evt, () => mirror(right, left));
+  });
+
+  function show(next, autoplay) {
+    index = (next + items.length) % items.length;
+    const item = items[index];
+    meta.textContent = item.meta;
+    left.poster = "assets/posters/" + item.stem + "_vanilla.jpg";
+    right.poster = "assets/posters/" + item.stem + "_hami.jpg";
+    left.src = "assets/videos/tasks/" + item.stem + "_vanilla.mp4";
+    right.src = "assets/videos/tasks/" + item.stem + "_hami.mp4";
+    left.load();
+    right.load();
+    setActive(menu, index);
+    if (autoplay) {
+      left.play().catch(() => {});
+      right.play().catch(() => {});
+    }
+  }
+
+  buildMenu(items, menu, i => show(i, true));
+  root.querySelector('[data-nav="prev"]').addEventListener("click", () => show(index - 1, true));
+  root.querySelector('[data-nav="next"]').addEventListener("click", () => show(index + 1, true));
+  root.querySelector("[data-replay]").addEventListener("click", () => {
+    left.currentTime = 0;
+    right.currentTime = 0;
+    left.play().catch(() => {});
+    right.play().catch(() => {});
+  });
+  show(0, false);
+}
+
+mountBench("robo-bench", ROBOCASA_TASKS);
+mountBench("libero-bench", LIBERO_TASKS);
+</script>
+
+</body>
+</html>
