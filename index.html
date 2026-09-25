@@ -92,7 +92,8 @@
     }
     table.results td, table.results th { text-align: center; vertical-align: middle; }
     table.results td:first-child, table.results th:first-child { text-align: left; }
-    .table.is-striped tbody tr.ours {
+    .table.is-striped tbody tr.ours,
+    .table.is-striped tbody td.ours {
       background-color: #e7f1ff !important;
       font-weight: 600;
     }
@@ -425,7 +426,7 @@
     <div class="content has-text-centered">
       <img class="figure-frame" src="assets/figures/intro.png" alt="Ordinary world model compared with Hamiltonian World Model">
       <p class="is-size-7 caption">
-        Comparison between an ordinary generative world model and Hamiltonian World Model, matching the paper overview. <strong>Left:</strong> a generic transition can look plausible over a short horizon while speed change and energy transfer remain unconstrained, so long-horizon contact becomes physically implausible. <strong>Right:</strong> the same observation and action are evolved in phase space, and the predicted future stays physically consistent.
+        Comparison between an ordinary generative world model and Hamiltonian World Model. <strong>Left:</strong> a generic transition can look plausible over a short horizon while speed change and energy transfer remain unconstrained, so long-horizon contact becomes physically implausible. <strong>Center:</strong> the same observation and action are evolved in phase space, and the predicted future stays physically consistent. <strong>Right:</strong> real-robot scores on EVAC, Ctrl-World, and RoboCasa, together with simulated position, velocity, acceleration, and jerk error.
       </p>
     </div>
   </div>
@@ -457,7 +458,7 @@
             <th style="background:#f0f4f9;">Method</th>
             <th style="background:#f0f4f9;">Step</th>
             <th style="background:#f0f4f9;">Pos. RMSE &darr;</th>
-            <th style="background:#f0f4f9;">Speed RMSE &darr;</th>
+            <th style="background:#f0f4f9;">Vel. RMSE &darr;</th>
             <th style="background:#f0f4f9;">Acc. RMSE &darr;</th>
             <th style="background:#f0f4f9;">Jerk RMSE &darr;</th>
           </tr>
@@ -465,16 +466,46 @@
         <tbody>
           <tr><td>Vanilla</td><td>30</td><td>6.217</td><td>3.455</td><td>10.966</td><td>14.135</td></tr>
           <tr class="ours"><td>Ours</td><td>30</td><td>6.212</td><td>3.372</td><td>9.235</td><td>11.401</td></tr>
-          <tr><td>Vanilla</td><td>60</td><td>5.590</td><td>2.545</td><td>8.332</td><td>12.329</td></tr>
-          <tr class="ours"><td>Ours</td><td>60</td><td>5.524</td><td>2.525</td><td>7.483</td><td>10.750</td></tr>
+          <tr><td>Vanilla</td><td>50</td><td>5.590</td><td>2.545</td><td>8.332</td><td>12.329</td></tr>
+          <tr class="ours"><td>Ours</td><td>50</td><td>5.524</td><td>2.525</td><td>7.483</td><td>10.750</td></tr>
         </tbody>
       </table>
-      <p class="is-size-7 caption">Lower is better. Object centers are read from generated frames; speed, acceleration, and jerk are finite differences against simulator annotations. The Hamiltonian transition reduces higher-order motion error at both horizons.</p>
+      <p class="is-size-7 caption">Instantaneous physical-state prediction. All models are trained with a 10-step horizon and evaluated at 30 and 50 steps. Lower is better.</p>
+    </div>
+
+    <div class="content" style="margin-top: 36px; overflow-x: auto;">
+      <h3 class="title is-5 has-text-centered">Table 2: Video prediction across horizons</h3>
+      <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.88rem;">
+        <thead>
+          <tr>
+            <th rowspan="2" style="background:#f0f4f9;">Train</th>
+            <th rowspan="2" style="background:#f0f4f9;">Test</th>
+            <th colspan="2" style="background:#f0f4f9;">MSE &darr;</th>
+            <th colspan="2" style="background:#f0f4f9;">MAE &darr;</th>
+          </tr>
+          <tr>
+            <th style="background:#f0f4f9;">Vanilla</th>
+            <th style="background:#f0f4f9;">Ours</th>
+            <th style="background:#f0f4f9;">Vanilla</th>
+            <th style="background:#f0f4f9;">Ours</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>10</td><td>10</td><td>2.76</td><td class="ours">2.56</td><td>23.88</td><td class="ours">21.27</td></tr>
+          <tr><td>10</td><td>30</td><td>25.38</td><td class="ours">23.82</td><td>53.56</td><td class="ours">49.27</td></tr>
+          <tr><td>10</td><td>50</td><td>55.57</td><td class="ours">51.18</td><td>87.59</td><td class="ours">80.37</td></tr>
+          <tr><td>10</td><td>60</td><td>62.32</td><td class="ours">53.03</td><td>95.32</td><td class="ours">82.58</td></tr>
+          <tr><td>30</td><td>30</td><td>25.81</td><td class="ours">24.38</td><td>79.36</td><td class="ours">73.31</td></tr>
+          <tr><td>30</td><td>50</td><td>37.55</td><td class="ours">33.65</td><td>94.54</td><td class="ours">87.84</td></tr>
+          <tr><td>30</td><td>60</td><td>44.59</td><td class="ours">38.93</td><td>102.55</td><td class="ours">94.60</td></tr>
+        </tbody>
+      </table>
+      <p class="is-size-7 caption">Video prediction under different training and evaluation horizons. Lower is better. Trained for 10 steps and rolled out to 60, HWM reduces MSE from 62.32 to 53.03 and MAE from 95.32 to 82.58.</p>
     </div>
 
     <div class="two-col" style="margin-top: 36px;">
       <div style="overflow-x: auto;">
-        <h3 class="title is-5 has-text-centered">Table 2: Ctrl-World</h3>
+        <h3 class="title is-5 has-text-centered">Table 3: Ctrl-World</h3>
         <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.82rem;">
           <thead>
             <tr>
@@ -495,7 +526,7 @@
         <p class="is-size-7 caption">Single-arm multi-view manipulation on AgiBot World, evaluated with EWMBench. All metrics are higher-is-better. nDTW improves by 9.7% relative.</p>
       </div>
       <div style="overflow-x: auto;">
-        <h3 class="title is-5 has-text-centered">Table 3: EVAC</h3>
+        <h3 class="title is-5 has-text-centered">Table 4: EVAC</h3>
         <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.82rem;">
           <thead>
             <tr>
@@ -518,7 +549,7 @@
     </div>
 
     <div class="content" style="margin-top: 36px; overflow-x: auto;">
-      <h3 class="title is-5 has-text-centered">Table 4: Downstream success with Cosmos-Predict2.5-2B</h3>
+      <h3 class="title is-5 has-text-centered">Table 5: Downstream success with Cosmos-Predict2.5-2B</h3>
       <table class="table is-bordered is-striped is-hoverable is-fullwidth results" style="font-size: 0.88rem;">
         <thead>
           <tr>
