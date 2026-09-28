@@ -69,6 +69,13 @@
       border: 1px solid #e6e6e6;
       background: #fff;
     }
+    video.explainer {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #e6e6e6;
+      background: #0b1220;
+      display: block;
+    }
     .figure-method {
       width: 78%;
       max-width: 820px;
@@ -390,6 +397,7 @@
               </a>
             </div>
             <div class="anchor-row">
+              <a href="#overview">Overview</a>
               <a href="#method">Method</a>
               <a href="#results">Results</a>
               <a href="#physics">Physical quantities</a>
@@ -419,6 +427,18 @@
     </section>
   </div>
 </div>
+
+<section class="section" id="overview">
+  <div class="container is-wide">
+    <h2 class="title is-3 has-text-centered">Overview</h2>
+    <video class="explainer" controls playsinline preload="metadata" poster="assets/videos/hwm_explainer_poster.jpg">
+      <source src="assets/videos/hwm_explainer.mp4" type="video/mp4">
+    </video>
+    <p class="is-size-7 caption has-text-centered">
+      A short walkthrough of Hamiltonian World Model: unstructured transitions can look plausible while the physics drifts, and phase-space dynamics keep imagined robot futures consistent.
+    </p>
+  </div>
+</section>
 
 <section class="section" id="method">
   <div class="container is-wide">
